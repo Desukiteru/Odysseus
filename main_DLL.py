@@ -14,69 +14,60 @@ class config:
           self.token = config['Main']['token']
           self.base_channel = config['Main']['base_channel']
 
-class bufor_package:
-     def __init__(self, domen, keys):
-          self.pack = []
-          self.fetch(domen, keys)
 
-     def fetch(self, domen, keys):
-          file = BeautifulSoup(str(requests.get(str(domen)).text),"html.parser")
-          buf = ((file.find(attrs=keys[0])).find_all(keys[1]))
-          bufor = []
-          i= 0
-          for zle in buf:
-               try:
-                    tyt = zle.find(keys[2]).text
-                    price = zle.find(attrs=keys[3]).get_text()
-                    desc = zle.find(attrs=keys[4]).get_text()
-                    tags = zle.find(attrs=keys[5]).get_text()
-                    link = zle.find(keys[6]).get(keys[7])
-               except:
-                    pass
-                    bufor.append([])
-                    bufor[i].append(tyt)
-                    bufor[i].append(price)
-                    bufor[i].append(desc)
-                    bufor[i].append(tags)
-                    bufor[i].append(link)
-                    i=i+1
-          listm = []
-          [listm.append(a) for a in bufor if a not in listm]
-          self.pack = listm
+class buforPackage:
+     def __init__(self, dane):
+          self.site = dane[0]
+          self.keys = dane[1]
+          self.main = dane[2]
+          self.fetchall(self.main)
 
-class ofert:
-     def __init__(self, buf):
-          self.title= ""
-          self.price = ""
-          self.desc = ""
-          self.tags = ""
-          self.link = ""
-          self.fetch(buf)
-     def fetch(self, buf):
-          self.title = buf[0]
-          self.price = buf[1]
-          self.desc = buf[2]
-          self.tags = buf[3]
-          self.link= buf[4]
-     def iam(self):
-          print(self.title)
-          print(self.price)
-          print(self.desc)
-          print(self.tags)
-          print(self.link)
+     def handlerBS(self, a, b):
+          x = BeautifulSoup(str(a.select(b)), "html.parser")
+          return x
 
-class baza:
+     def fetchall(self, main):
+          keys = self.keys
+          file = BeautifulSoup(str(requests.get(self.site).text), "html.parser")
+          buf = (file.find(**main)).children
+          ab = []
+          for a in buf:
+               if a != "\n":
+                    ab.append(a)
+
+          zle = []
+          i = 0
+          for ofert in ab:
+               if i <= 5 and (self.handlerBS(ofert, keys[0]).text != "[]"):
+                    zle.append([])
+                    zle[i].append(self.handlerBS(ofert, keys[0]).text)  # t
+                    zle[i].append(self.handlerBS(ofert, keys[1]).text)  # p
+                    zle[i].append(self.handlerBS(ofert, keys[2]).text)  # d
+                    zle[i].append(self.handlerBS(ofert, keys[3]).text)  # t
+                    zle[i].append(ofert.find(keys[4])['href'])  # l
+                    i = i + 1
+
+          self.pack = zle
+
+
+class base:
      def __init__(self):
-          self.base = []
+          self.seed = []
+          self.basse = []
+
+     def addseed(self, site, keys, main):
+          self.seed.append([site, keys, main])
+
+     def refresh(self):
+          self.basse = []
+          for site in self.seed:
+               bufor = buforPackage(site)
+               self.basse.append([site[0], bufor])
 
 
-keys=[{"id":"job-list"},["div", "wrapper"],"h2",
-      {"class":"price"},{"class": "description"},{"class": "tags"},["a", "href"],"href"]
-a= bufor_package("https://useme.com/pl/jobs/category/strony-internetowe,1/",keys).pack
-ab = []
-for ofer in a:
-     ab.append(ofert(ofer))
-
-for ofer in ab:
-     ofer.iam()
-
+somtin = base()
+somtin.addseed('https://oferia.pl/zlecenia/programowanie-it', ['h2', '.price', '.listing-order-content', '--//--', 'a'],
+               {'class': 'l-listing-maincol'})
+somtin.refresh()
+site = somtin.basse[0][1].pack[0]
+print(site)
